@@ -9,7 +9,7 @@ def cleanhtml(raw_html):
     cleanr = re.compile('<.*?>')
     cleantext = re.sub(cleanr, '', raw_html)
     unescape_clean_text = html.unescape(cleantext)
-    return unescape_clean_text.encode("utf-8")
+    return unescape_clean_text.encode("utf8")
 
 
 def main():
@@ -25,17 +25,29 @@ def main():
     # All the posts start with children
     results = results.get('children')
 
+    all_replies = sum([child.get('children') for child in results],[])
+    print(all_replies)
+
     with open('results.csv', 'w', newline='') as csvfile:
-        spamwriter = csv.writer(csvfile, delimiter=',')
+        writer = csv.writer(csvfile, delimiter=',')
+        writer.writerow(["Name", "Email", "Post Content", "Reply Content"])
+
         for user in users:
-            student = filter(lambda n: n.get('uid') == user['id'], results)
+            student_posts = filter(lambda n: n.get('uid') == user['id'], results)
             try:
-                subject = cleanhtml(student.__next__().get('subject'))
+                subject = cleanhtml(student_posts.__next__().get('subject'))
             except StopIteration:
                 subject = ''
 
-            student_reply = filter(lambda n: n.get('children') == user['id'], results)
-            spamwriter.writerow([user['name'], user['email'], subject])
+            student_reply = filter(lambda n: n.get('uid') == user['id'], all_replies)
+            reply_subject = []
+            try:
+                while 1:
+                    reply_subject.append(cleanhtml(student_reply.__next__().get('subject')))
+            except StopIteration:
+                pass
+
+            writer.writerow([user['name'], user['email'], subject, [reply_single for reply_single in reply_subject]])
 
 
 if __name__ == '__main__':
