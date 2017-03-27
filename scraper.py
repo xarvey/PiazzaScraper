@@ -1,9 +1,8 @@
 import json
 import csv
-import html
 import re
-import unicodedata
-
+import html
+from piazza_api import Piazza
 
 def cleanhtml(raw_html):
     cleanr = re.compile('<.*?>')
@@ -12,21 +11,15 @@ def cleanhtml(raw_html):
     return unescape_clean_text.encode("utf8")
 
 
-def main():
-    with open('all_users.json') as data_file:
-        users = json.load(data_file)
-
+def generate_csv(users, results):
     # Remove the TA from the list
     users = list(filter(lambda n: n.get('role') != 'ta', users))
 
-    with open('result.json') as data_file:
-        results = json.load(data_file)
-
     # All the posts start with children
+    print(list(results))
     results = results.get('children')
 
-    all_replies = sum([child.get('children') for child in results],[])
-    print(all_replies)
+    all_replies = sum([child.get('children') for child in results], [])
 
     with open('results.csv', 'w', newline='') as csvfile:
         writer = csv.writer(csvfile, delimiter=',')
@@ -48,6 +41,18 @@ def main():
                 pass
 
             writer.writerow([user['name'], user['email'], subject, [reply_single for reply_single in reply_subject]])
+
+
+def main():
+    p = Piazza()
+    p.user_login()
+    classId = input("Enter your class id")
+    classObj = p.network(classId)
+    postId = input("Enter post number")
+    posts = classObj.get_post(postId)
+    all_users = classObj.get_all_users()
+
+    generate_csv(all_users, posts)
 
 
 if __name__ == '__main__':
