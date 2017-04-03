@@ -2,6 +2,8 @@ import json
 import csv
 import re
 import html
+import py_compile
+
 from piazza_api import Piazza
 
 def cleanhtml(raw_html):
